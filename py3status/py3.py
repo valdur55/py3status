@@ -10,6 +10,7 @@ from time import time
 from subprocess import Popen, PIPE
 
 from py3status.formatter import Formatter, Composite
+from py3status.storage import Storage
 
 
 PY3_CACHE_FOREVER = -1
@@ -65,6 +66,9 @@ class Py3:
     # Shared by all Py3 Instances
     _formatter = Formatter()
     _none_color = NoneColor()
+    _storage = Storage()
+
+    _storage_path = None
 
     def __init__(self, module=None, i3s_config=None, py3status=None):
         self._audio = None
@@ -701,6 +705,51 @@ class Py3:
             msg = "Command '{cmd}' had error {error}"
             raise Exception(msg.format(cmd=command[0], error=error))
         return output
+
+    def _storage_init(self):
+        if not self._storage.initialized:
+            self._storage.init(self._module._py3_wrapper)
+
+    def storage_set(self, key, value):
+        """
+        Store a value for the module
+        """
+        if not self._module:
+            return
+        self._storage_init()
+        module_name = self._module.module_full_name
+        return self._storage.storage_set(module_name, key, value)
+
+    def storage_get(self, key):
+        """
+        Retrieve a value for the module
+        """
+        if not self._module:
+            return
+        self._storage_init()
+        module_name = self._module.module_full_name
+        return self._storage.storage_get(module_name, key)
+
+    def storage_clear(self, key=None):
+        """
+        Remove the value stored with the key from storage.
+        If key is not supplied then all values for the module are removed.
+        """
+        if not self._module:
+            return
+        self._storage_init()
+        module_name = self._module.module_full_name
+        return self._storage.storage_clear(module_name, key=key)
+
+    def storage_keys(self):
+        """
+        Return a list of the keys for values stored for the module.
+        """
+        if not self._module:
+            return []
+        self._storage_init()
+        module_name = self._module.module_full_name
+        return self._storage.storage_keys(module_name)
 
     def play_sound(self, sound_file):
         """
