@@ -694,7 +694,9 @@ class Py3:
             output = output.decode('utf-8')
             error = error.decode('utf-8')
         retcode = process.poll()
-        if retcode:
+        # if the process has been terminated by a signal then we get a negative
+        # retcode.
+        if retcode > 0:
             msg = "Command '{cmd}' returned non-zero exit status {error}"
             raise Exception(msg.format(cmd=command[0], error=retcode))
         if error:
