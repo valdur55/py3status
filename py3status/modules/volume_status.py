@@ -160,14 +160,23 @@ class PactlBackend(AudioBackend):
         if self.device is None:
             self.device = "0"
         self.max_volume = parent.max_volume
-        self.re_volume = re.compile(
-            r'Sink \#{}.*?Mute: (\w{{2,3}}).*?Volume:.*?(\d{{1,3}})\%'.format(self.device),
+        self.regex = r'Name: {}.*?Mute: (\w{{2,3}}).*?Volume:.*?(\d{{1,3}})\%'
+
+    def get_active_device(self):
+        output = check_output(['pactl', 'info']).decode('utf-8').strip().split("\n")
+        for l in output:
+            if "Default Sink:" in l:
+                return l.split(": ")[-1]
+
+    def get_regex(self, output):
+        return re.compile(
+            self.regex.format(self.get_active_device()),
             re.M | re.DOTALL
-        )
+        ).search(output).groups()
 
     def get_volume(self):
         output = check_output(['pactl', 'list', 'sinks']).decode('utf-8').strip()
-        muted, perc = self.re_volume.search(output).groups()
+        muted, perc = self.get_regex(output)
 
         # muted should be 'on' or 'off'
         if muted in ['yes', 'no']:
@@ -183,13 +192,13 @@ class PactlBackend(AudioBackend):
             change = '{}%'.format(self.max_volume)
         else:
             change = '+{}%'.format(delta)
-        self.run_cmd(['pactl', 'set-sink-volume', self.device, change])
+        self.run_cmd(['pactl', 'set-sink-volume', self.get_active_device(), change])
 
     def volume_down(self, delta):
-        self.run_cmd(['pactl', 'set-sink-volume', self.device, '-{}%'.format(delta)])
+        self.run_cmd(['pactl', 'set-sink-volume', self.get_active_device(), '-{}%'.format(delta)])
 
     def toggle_mute(self):
-        self.run_cmd(['pactl', 'set-sink-mute', self.device, 'toggle'])
+        self.run_cmd(['pactl', 'set-sink-mute', self.get_active_device(), 'toggle'])
 
 
 class Py3status:
@@ -241,7 +250,7 @@ class Py3status:
         # Guess command if not set
         if self.command is None:
             self.command = self.py3.check_commands(
-                ['amixer', 'pamixer', 'pactl']
+                ['pactl', 'amixer', 'pamixer']
             )
 
         if self.command == 'amixer':
