@@ -311,11 +311,10 @@ class Py3status:
             ptime = None
 
         if (
-            self.py3.format_contains(self.format, "time")
-            and self._data.get("state") == PLAYING
+            self._data.get("state") == PLAYING
         ):
             # Don't get trapped in aliasing errors!
-            update = time.perf_counter() + 0.5
+            update = time.perf_counter() + 5
         else:
             update = self.py3.CACHE_FOREVER
 
