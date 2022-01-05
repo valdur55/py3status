@@ -403,7 +403,14 @@ class Py3statusWrapper:
 
         # we return how long till we next need to process the timeout_queue
         if self.timeout_due is not None:
-            return self.timeout_due - time.perf_counter()
+            new_due = self.timeout_due - time.perf_counter()
+            if new_due < 0:
+                self.notify_user(f"Negative update_due occured {new_due}.")
+                self.log(f"Negative update_due occured {new_due}.")
+            else:
+                return new_due
+
+
 
     def gevent_monkey_patch_report(self):
         """
@@ -1026,10 +1033,6 @@ class Py3statusWrapper:
         while True:
             # process the timeout_queue and get interval till next update due
             update_due = self.timeout_queue_process()
-
-            if update_due is not None and update_due < 0:
-                self.log("Negative update_due occured. Reseting to 1")
-                update_due = 1
 
             # wait until an update is requested
             if self.update_request.wait(timeout=update_due):
