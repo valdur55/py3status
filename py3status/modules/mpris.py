@@ -314,7 +314,7 @@ class Py3status:
             self._data.get("state") == PLAYING
         ):
             # Don't get trapped in aliasing errors!
-            update = time.perf_counter() + 5
+            update = time.perf_counter() + 0.5
         else:
             update = self.py3.CACHE_FOREVER
 
