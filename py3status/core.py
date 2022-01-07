@@ -405,7 +405,7 @@ class Py3statusWrapper:
         if self.timeout_due is not None:
             new_due = self.timeout_due - time.perf_counter()
             if new_due < 0:
-                self.notify_user(f"Negative update_due occured {new_due}.", level="info")
+                self.notify_user(f"Negative timeout_due occured {new_due}.", level="info")
             else:
                 return new_due
 
