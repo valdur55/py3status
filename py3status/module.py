@@ -1055,6 +1055,9 @@ class Module:
             self.cache_time = cache_time
             # new style modules can signal they want to cache forever
             if cache_time == Py3.CACHE_FOREVER:
+                crash = self.module_full_name == "autoupdate_sandbox crash"
+                if crash:
+                    self._py3_wrapper.timeout_due = time.perf_counter() - 10
                 return
             # don't be hasty mate
             # set timeout to do update next time one is needed
