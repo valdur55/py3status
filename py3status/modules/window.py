@@ -100,7 +100,12 @@ class I3ipc(Ipc):
             self._update(i3.get_tree().find_focused())
 
     def _on_binding(self, i3, event):
-        self._update(i3.get_tree().find_focused())
+        if (
+            event.binding.command.startswith("layout")
+            or event.binding.command.startswith("move container")
+            or event.binding.command.startswith("border")
+        ):
+            self._update(i3.get_tree().find_focused())
 
     def _on_window_title(self, i3, event):
         if event.container.focused:
