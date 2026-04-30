@@ -111,6 +111,8 @@ from pathlib import Path
 
 INVALID_CPU_TEMP_UNIT = "invalid cpu_temp_unit"
 STRING_NOT_INSTALLED = "not installed"
+ZFS_ARCSTATS_PATH = Path("/proc/spl/kstat/zfs/arcstats")
+ZFS_SIZE_REGEX = re.compile(r"^size\s+\d+\s+(\d+)")
 
 
 class Py3status:
@@ -235,6 +237,7 @@ class Py3status:
 
     def post_config_hook(self):
         self.first_run = True
+        self._zfs_arcstats = ZFS_ARCSTATS_PATH if ZFS_ARCSTATS_PATH.exists() else None
         self.init = {"meminfo": [], "stat": []}
         names_and_matches = [
             ("cpu_freq", ["cpu_freq_avg", "cpu_freq_max"]),
@@ -409,17 +412,15 @@ class Py3status:
             return {fields[0]: float(fields[1]) for fields in info}
 
     def _get_zfs_arc_size(self):
-        """will raise OSError on failures"""
-        ZFS_SIZE_REGEX = re.compile(r"^size\s+\d+\s+(\d+)")
+        if self._zfs_arcstats is None:
+            return 0
         try:
-            with Path("/proc/spl/kstat/zfs/arcstats").open() as f:
-                for line in f.readlines():
+            with self._zfs_arcstats.open() as f:
+                for line in f:
                     m = ZFS_SIZE_REGEX.match(line)
                     if m:
                         return int(m.group(1)) / 1024
         except (OSError, ValueError):
-            # skip errors if file is missing or inaccessible, or
-            # doesn't have the expected syntax
             pass
         return 0
 
